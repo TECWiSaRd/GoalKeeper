@@ -68,41 +68,44 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
 
     @Published var state: UpdateState = .idle
     @Published var currentVersion: String = {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        return v
     }()
 
     private var downloadTask: URLSessionDownloadTask?
     private lazy var session: URLSession = {
-        URLSession(configuration: .default, delegate: self, delegateQueue: .main)
+        let config = URLSessionConfiguration.default
+        config.waitsForConnectivity = true
+        config.timeoutIntervalForResource = 300
+        return URLSession(configuration: config, delegate: self, delegateQueue: .main)
     }()
 
     // MARK: - Check for updates
     func checkForUpdates() async {
-        await MainActor.run { state = .checking }
-        do {
-            guard let url = URL(string: Self.manifestURL) else {
-                await MainActor.run { state = .error("Invalid manifest URL") }
-                return
-            }
-            let (data, response) = try await URLSession.shared.data(from: url)
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-                await MainActor.run { state = .error("Could not reach update server") }
-                return
-            }
-            let manifest = try JSONDecoder().decode(VersionManifest.self, from: data)
-            guard let remote = AppVersion(manifest.version),
-                  let local  = AppVersion(currentVersion) else {
-                await MainActor.run { state = .error("Could not parse version numbers") }
-                return
-            }
-            await MainActor.run {
-                state = remote > local ? .available(manifest: manifest) : .upToDate
-            }
-        } catch {
-            await MainActor.run { state = .error(error.localizedDescription) }
-        }
-    }
-
+           await MainActor.run { state = .checking }
+           do {
+               guard let url = URL(string: Self.manifestURL) else {
+                   await MainActor.run { state = .error("Invalid manifest URL") }
+                   return
+               }
+               let (data, response) = try await URLSession.shared.data(from: url)
+               guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+                   await MainActor.run { state = .error("Could not reach update server") }
+                   return
+               }
+               let manifest = try JSONDecoder().decode(VersionManifest.self, from: data)
+               guard let remote = AppVersion(manifest.version),
+                     let local  = AppVersion(currentVersion) else {
+                   await MainActor.run { state = .error("Could not parse version numbers") }
+                   return
+               }
+               await MainActor.run {
+                   state = remote > local ? .available(manifest: manifest) : .upToDate
+               }
+           } catch {
+               await MainActor.run { state = .error(error.localizedDescription) }
+           }
+       }
     // MARK: - Download update
     func downloadUpdate(from urlString: String) {
         guard let url = URL(string: urlString) else {
@@ -117,6 +120,15 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
         downloadTask?.cancel()
         downloadTask = nil
         state = .idle
+    }
+    
+    nonisolated func urlSession(_ session: URLSession,
+                                task: URLSessionTask,
+                                willPerformHTTPRedirection response: HTTPURLResponse,
+                                newRequest request: URLRequest,
+                                completionHandler: @escaping (URLRequest?) -> Void) {
+        print("↪️ Redirecting to: \(request.url?.absoluteString ?? "nil")")
+        completionHandler(request)
     }
 
     // MARK: - URLSessionDownloadDelegate
@@ -165,11 +177,19 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
                 let extractDir = fm.temporaryDirectory
                     .appendingPathComponent("GoalKeeper_extracted")
                 try? fm.removeItem(at: extractDir)
-                try fm.createDirectory(at: extractDir, withIntermediateDirectories: true)
+                            try fm.createDirectory(at: extractDir, withIntermediateDirectories: true)
 
-                try await self.runProcess("/usr/bin/unzip",
-                                         arguments: ["-q", zipURL.path,
-                                                     "-d", extractDir.path])
+                            let zipExists = fm.fileExists(atPath: zipURL.path)
+                            let zipSize = (try? fm.attributesOfItem(atPath: zipURL.path)[.size] as? Int) ?? 0
+                            print("📥 ZIP exists: \(zipExists), size: \(zipSize) bytes")
+
+                            let unzipOutput = try await self.runProcess("/usr/bin/unzip",
+                                                     arguments: [zipURL.path,
+                                                                 "-d", extractDir.path])
+                            print("📦 Unzip output: \(unzipOutput)")
+
+                            let debugItems = try fm.contentsOfDirectory(atPath: extractDir.path)
+                            print("📂 Extracted contents: \(debugItems)")
 
                 // 2. Find GoalKeeper.app inside the extracted folder
                 guard let newApp = try self.findApp(in: extractDir) else {
@@ -185,12 +205,18 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
                 try? fm.removeItem(at: extractDir)
 
                 // 5. Relaunch updated app and quit old one
-                await MainActor.run {
+                
                     let task = Process()
                     task.launchPath = "/usr/bin/open"
-                    task.arguments  = [Bundle.main.bundlePath]
+                    task.arguments  = ["/Applications/GoalKeeper.app"]
                     try? task.run()
-                    NSApp.terminate(nil)
+                    
+                    // Wait a moment to ensure the open command fires before quitting
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                    
+                    await MainActor.run {
+                        NSApp.terminate(nil)
+                    
                 }
             } catch {
                 await MainActor.run {
