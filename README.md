@@ -34,7 +34,10 @@ Copy all `.swift` files into your Xcode project. When dragging in, ensure "Copy 
 | `CalendarDashboardView.swift` | Middle column: calendar + rings |
 | `GoalDetailView.swift` | Right column: steps + detail |
 | `AddGoalView.swift` | New-goal sheet |
-
+| `KeychainService.swift` | Stores Claude API key |
+| `SettingsView.swift` | Settings menu |
+| `UpdateService.swift` | Performs app updates |
+| `Contents.json` | Replaces the `Contents.json' in GoalKeeper → Assets.xcassets → AppIcon.appiconset |
 > Delete the auto-generated `ContentView.swift` (or replace it with ours).
 
 ### 3. Set Your API Key
