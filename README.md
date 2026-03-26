@@ -4,6 +4,11 @@ AI-powered goal & assignment tracker for macOS. Uses Claude to analyze goals and
 
 ---
 
+### Notes: 
+The app download itself is available. Only observe this README if you are planning to import the raw files to Xcode and build your own version of GoalKeeper.
+
+This app is **only compatible with MacOS**.
+
 ## 🚀 Xcode Setup
 
 ### 1. Create a New Project
