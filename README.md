@@ -9,7 +9,7 @@ AI-powered goal & assignment tracker for macOS. Uses Claude to analyze goals and
 
 - This app is **only compatible with MacOS 26.0 and newer**.
 
-- When you first open this app from the zip file, you'll get an error saying: "Apple could not verify is free of malware that may harm your Mac or compromise your privacy." Go to **System Settings → Privacy & Security → Scroll down to "'GoalKeeper' was blocked from use because it is not from an identified developer" → click *Open Anyway***.
+- When you first open this app from the zip file, you'll get an error saying: "Apple could not verify is free of malware that may harm your Mac or compromise your privacy." Go to **System Settings → Privacy & Security → Scroll down to "'GoalKeeper' was blocked from use because it is not from an identified developer" → click *Open Anyway*** to resolve this.
 ---
 
 ## 🚀 Xcode Setup
