@@ -1,5 +1,5 @@
 // UpdateService.swift
-// Checks for app updates via a hosted version.json and downloads new DMG releases
+// Checks for app updates via version.json on GitHub and installs from GoalKeeper.zip
 
 import Foundation
 import AppKit
@@ -43,7 +43,7 @@ enum UpdateState: Equatable {
     case upToDate
     case available(manifest: VersionManifest)
     case downloading(progress: Double)
-    case readyToInstall(dmgURL: URL)
+    case readyToInstall(zipURL: URL)
     case error(String)
 
     static func == (lhs: UpdateState, rhs: UpdateState) -> Bool {
@@ -58,14 +58,13 @@ enum UpdateState: Equatable {
 }
 
 // MARK: - Service
-
 class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
 
     static let shared = UpdateService()
 
-    // ⚠️ Replace with your GitHub raw URL after setting up your repo:
-    // Format: https://raw.githubusercontent.com/USERNAME/REPO/main/version.json
-    static let manifestURL = "https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/GoalKeeper/main/version.json"
+    // Replace with your GitHub raw URL:
+    // https://raw.githubusercontent.com/YOUR_USERNAME/GoalKeeper/main/version.json
+    static let manifestURL = "https://raw.githubusercontent.com/TECWiSaRd/GoalKeeper/main/version.json"
 
     @Published var state: UpdateState = .idle
     @Published var currentVersion: String = {
@@ -79,27 +78,28 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
 
     // MARK: - Check for updates
     func checkForUpdates() async {
-        state = .checking
+        await MainActor.run { state = .checking }
         do {
             guard let url = URL(string: Self.manifestURL) else {
-                state = .error("Invalid manifest URL"); return
+                await MainActor.run { state = .error("Invalid manifest URL") }
+                return
             }
             let (data, response) = try await URLSession.shared.data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-                state = .error("Could not reach update server"); return
+                await MainActor.run { state = .error("Could not reach update server") }
+                return
             }
             let manifest = try JSONDecoder().decode(VersionManifest.self, from: data)
             guard let remote = AppVersion(manifest.version),
                   let local  = AppVersion(currentVersion) else {
-                state = .error("Could not parse version numbers"); return
+                await MainActor.run { state = .error("Could not parse version numbers") }
+                return
             }
-            if remote > local {
-                state = .available(manifest: manifest)
-            } else {
-                state = .upToDate
+            await MainActor.run {
+                state = remote > local ? .available(manifest: manifest) : .upToDate
             }
         } catch {
-            state = .error(error.localizedDescription)
+            await MainActor.run { state = .error(error.localizedDescription) }
         }
     }
 
@@ -127,25 +127,18 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
                                 totalBytesExpectedToWrite: Int64) {
         guard totalBytesExpectedToWrite > 0 else { return }
         let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-        Task { @MainActor in
-            self.state = .downloading(progress: progress)
-        }
+        Task { @MainActor in self.state = .downloading(progress: progress) }
     }
 
     nonisolated func urlSession(_ session: URLSession,
                                 downloadTask: URLSessionDownloadTask,
                                 didFinishDownloadingTo location: URL) {
-        // Move DMG to Downloads folder
-        let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
-        let filename   = downloadTask.originalRequest?.url?.lastPathComponent ?? "GoalKeeper.dmg"
-        let dest       = downloads.appendingPathComponent(filename)
-
-        try? FileManager.default.removeItem(at: dest)
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("GoalKeeper_update.zip")
+        try? FileManager.default.removeItem(at: tmp)
         do {
-            try FileManager.default.moveItem(at: location, to: dest)
-            Task { @MainActor in
-                self.state = .readyToInstall(dmgURL: dest)
-            }
+            try FileManager.default.moveItem(at: location, to: tmp)
+            Task { @MainActor in self.state = .readyToInstall(zipURL: tmp) }
         } catch {
             Task { @MainActor in
                 self.state = .error("Could not save update: \(error.localizedDescription)")
@@ -157,45 +150,45 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
                                 task: URLSessionTask,
                                 didCompleteWithError error: Error?) {
         guard let error = error else { return }
-        // Ignore cancellation
         if (error as NSError).code == NSURLErrorCancelled { return }
-        Task { @MainActor in
-            self.state = .error(error.localizedDescription)
-        }
+        Task { @MainActor in self.state = .error(error.localizedDescription) }
     }
 
-    // MARK: - Auto-install: mount DMG, replace existing app, relaunch
-    func installUpdate(_ dmgURL: URL) {
+    // MARK: - Install from ZIP
+    func installUpdate(_ zipURL: URL) {
         state = .downloading(progress: 1.0)
         Task.detached {
             do {
-                // 1. Mount the DMG silently
-                let mountPoint = try await self.mountDMG(dmgURL)
+                let fm = FileManager.default
 
-                // 2. Find the .app inside the mounted volume
-                let contents = try FileManager.default.contentsOfDirectory(
-                    at: mountPoint, includingPropertiesForKeys: nil)
-                guard let appInDMG = contents.first(where: { $0.pathExtension == "app" }) else {
-                    throw InstallError.appNotFoundInDMG
+                // 1. Unzip into a temp directory
+                let extractDir = fm.temporaryDirectory
+                    .appendingPathComponent("GoalKeeper_extracted")
+                try? fm.removeItem(at: extractDir)
+                try fm.createDirectory(at: extractDir, withIntermediateDirectories: true)
+
+                try await self.runProcess("/usr/bin/unzip",
+                                         arguments: ["-q", zipURL.path,
+                                                     "-d", extractDir.path])
+
+                // 2. Find GoalKeeper.app inside the extracted folder
+                guard let newApp = try self.findApp(in: extractDir) else {
+                    throw InstallError.appNotFoundInZip
                 }
 
-                // 3. Destination = same location as the currently running app
-                let destination = URL(fileURLWithPath: Bundle.main.bundlePath)
+                // 3. Replace the running app in-place — no duplicate created
+                let currentApp = URL(fileURLWithPath: Bundle.main.bundlePath)
+                _ = try fm.replaceItemAt(currentApp, withItemAt: newApp)
 
-                // 4. Replace the existing app with the new one (no duplicate)
-                _ = try FileManager.default.replaceItemAt(destination, withItemAt: appInDMG)
+                // 4. Clean up
+                try? fm.removeItem(at: zipURL)
+                try? fm.removeItem(at: extractDir)
 
-                // 5. Unmount the DMG
-                try await self.unmountDMG(mountPoint)
-
-                // 6. Delete the downloaded DMG from Downloads
-                try? FileManager.default.removeItem(at: dmgURL)
-
-                // 7. Relaunch from the updated location
+                // 5. Relaunch updated app and quit old one
                 await MainActor.run {
                     let task = Process()
                     task.launchPath = "/usr/bin/open"
-                    task.arguments  = [destination.path]
+                    task.arguments  = [Bundle.main.bundlePath]
                     try? task.run()
                     NSApp.terminate(nil)
                 }
@@ -207,25 +200,20 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
         }
     }
 
-    // MARK: - Mount / unmount helpers
-    private func mountDMG(_ url: URL) async throws -> URL {
-        let output = try await runProcess(
-            "/usr/bin/hdiutil",
-            arguments: ["attach", url.path, "-nobrowse", "-noautoopen", "-plist"]
-        )
-        guard let data = output.data(using: .utf8),
-              let plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
-              let entities = plist["system-entities"] as? [[String: Any]],
-              let mountPath = entities.compactMap({ $0["mount-point"] as? String }).first
-        else { throw InstallError.mountFailed }
-        return URL(fileURLWithPath: mountPath)
+    // Recursively finds the first .app bundle in a directory
+    private func findApp(in dir: URL) throws -> URL? {
+        let fm    = FileManager.default
+        let items = try fm.contentsOfDirectory(
+            at: dir, includingPropertiesForKeys: [.isDirectoryKey])
+        if let app = items.first(where: { $0.pathExtension == "app" }) { return app }
+        for item in items {
+            let vals = try item.resourceValues(forKeys: [.isDirectoryKey])
+            if vals.isDirectory == true, let app = try findApp(in: item) { return app }
+        }
+        return nil
     }
 
-    private func unmountDMG(_ mountPoint: URL) async throws {
-        try await runProcess("/usr/bin/hdiutil",
-                             arguments: ["detach", mountPoint.path, "-quiet"])
-    }
-
+    // MARK: - Process runner
     @discardableResult
     private func runProcess(_ launchPath: String, arguments: [String]) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
@@ -234,23 +222,21 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
             process.launchPath     = launchPath
             process.arguments      = arguments
             process.standardOutput = pipe
+            process.standardError  = pipe
             process.terminationHandler = { _ in
                 let data   = pipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: data, encoding: .utf8) ?? ""
-                continuation.resume(returning: output)
+                continuation.resume(returning: String(data: data, encoding: .utf8) ?? "")
             }
             do    { try process.run() }
             catch { continuation.resume(throwing: error) }
         }
     }
 
+    // MARK: - Errors
     enum InstallError: LocalizedError {
-        case appNotFoundInDMG, mountFailed
+        case appNotFoundInZip
         var errorDescription: String? {
-            switch self {
-            case .appNotFoundInDMG: return "Could not find GoalKeeper.app inside the update."
-            case .mountFailed:      return "Could not mount the downloaded update file."
-            }
+            "Could not find GoalKeeper.app inside the downloaded ZIP."
         }
     }
 }
