@@ -1,5 +1,5 @@
 {
-  "version": "1.0.2",
-  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/1.0.2/GoalKeeper.zip",
-  "notes": "Added ability to change Claude model in Settings menu."
+  "version": "1.0.3",
+  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/1.0.3/GoalKeeper.zip",
+  "notes": "Minor bug fixes."
 }
