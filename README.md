@@ -1,101 +1,185 @@
-# GoalPlanner — macOS
+# GoalKeeper — AI-Powered Goal & Assignment Tracker for macOS
 
-AI-powered goal & assignment tracker for macOS. Uses Claude to analyze goals and build step-by-step plans, with a three-column layout (sidebar, calendar, detail) and Apple Fitness-style progress rings.
-
----
-
-### Notes: 
-- The app download itself is available. Only observe this README if you are planning to import the raw files to Xcode and build your own version of GoalKeeper.
-
-- This app is **only compatible with MacOS 26.0 and newer**.
-
-- When you first open this app from the zip file, you'll get an error saying: "Apple could not verify is free of malware that may harm your Mac or compromise your privacy." Go to **System Settings → Privacy & Security → Scroll down to "'GoalKeeper' was blocked from use because it is not from an identified developer" → click *Open Anyway*** to resolve this.
----
-
-## 🚀 Xcode Setup
-
-### 1. Create a New Project
-- Xcode → **File → New → Project**
-- Choose **macOS → App**
-- Language: **Swift**, Interface: **SwiftUI**
-- Name: `GoalPlanner`
-
-### 2. Add the Files
-Copy all `.swift` files into your Xcode project. When dragging in, ensure "Copy items if needed" is checked.
-
-| File | Role |
-|---|---|
-| `GoalPlannerApp.swift` | App entry point (replace the generated one) |
-| `Models.swift` | `Goal`, `GoalStep`, `GoalType`, etc. |
-| `GoalStore.swift` | ObservableObject state + UserDefaults |
-| `AnthropicService.swift` | Claude API (NSImage, async/await) |
-| `ProgressRingView.swift` | Activity rings |
-| `ContentView.swift` | `NavigationSplitView` root |
-| `SidebarView.swift` | Left column: goal list |
-| `CalendarDashboardView.swift` | Middle column: calendar + rings |
-| `GoalDetailView.swift` | Right column: steps + detail |
-| `AddGoalView.swift` | New-goal sheet |
-| `KeychainService.swift` | Stores Claude API key |
-| `SettingsView.swift` | Settings menu |
-| `UpdateService.swift` | Performs app updates |
-| `Contents.json` | Replaces the `Contents.json' in GoalKeeper → Assets.xcassets → AppIcon.appiconset |
-> Delete the auto-generated `ContentView.swift` (or replace it with ours).
-
-### 3. Set Your API Key
-Open `AnthropicService.swift` and replace:
-```swift
-static let apiKey = "YOUR_ANTHROPIC_API_KEY_HERE"
-```
-with your key from [console.anthropic.com](https://console.anthropic.com).
-
-> **Security tip:** Store the key in a `Config.xcconfig` and reference it via `Bundle.main.infoDictionary` for production builds.
-
-### 4. Configure the Target
-In **Signing & Capabilities**, you may need:
-- **App Sandbox** → enable **Outgoing Connections (Client)** for the Anthropic API
-- **App Sandbox** → enable **User Selected File (Read)** for image attachment via NSOpenPanel
-
-These are added automatically by Xcode's sandbox defaults, but double-check if API calls fail.
-
-### 5. Set Minimum Deployment Target
-- Target → **General** → Minimum Deployments → **macOS 14.0**
-
-### 6. Build & Run
-Select **My Mac** as the destination and press ▶.
+GoalKeeper is a macOS app that uses Claude AI to help you plan goals, track assignments, and study smarter. It features a three-column layout inspired by Apple Calendar, activity-ring progress tracking, and a built-in update system.
 
 ---
 
 ## ✨ Features
 
-- **3-column NavigationSplitView** — sidebar (goals), calendar (middle), detail (right)  
-- **Apple Fitness-style rings** — 3 concentric rings: overall %, step completion, time urgency  
-- **Claude AI analysis** — describe your goal, optionally attach a rubric or image → Claude returns an ordered JSON plan with time estimates and tips  
-- **macOS-native file picker** — `NSOpenPanel` for image attachment (no PhotosUI dependency)  
-- **Toolbar re-analyze** — click ✦ in the detail toolbar to regenerate the AI plan for any goal  
-- **Right-click to delete** — context menu on sidebar rows  
-- **⌘N keyboard shortcut** — open new-goal sheet from anywhere  
-- **Persistent storage** — `UserDefaults` with JSON encoding, survives restarts  
-- **Sample goals** — pre-loaded on first launch so the UI is immediately explorable
+### Goals
+- Create goals with a title, description, type, priority, and optional due date
+- Attach a rubric or image for Claude to analyze
+- Claude breaks your goal into 4–8 ordered steps with time estimates and tips
+- Track step completion — rings update in real time
+- Re-analyze any goal at any time from the toolbar
+
+### Homework Schedule
+- Import a schedule by pasting text or attaching a photo
+- Claude extracts all assignments, tests, and quizzes with their due dates and subjects
+- Review and edit extracted items before saving
+- Items are grouped by subject in the sidebar and shown as dots on the calendar
+
+### Study Guides
+- Automatically offered for tests, quizzes, and review assignments
+- Claude researches the topic and generates a full structured study guide
+- Three tabs: **Study Guide** (collapsible sections + key points), **Practice** (tap-to-reveal Q&A), **Tips**
+- Guides are saved and persist between sessions — regenerate anytime
+
+### Calendar
+- Apple Calendar-style month grid
+- Goal dots and schedule dots shown per day
+- Summary rings for overall progress across active goals
+
+### Progress Rings
+- Three concentric rings per goal (like Apple Fitness):
+  - **Outer** — overall completion %
+  - **Middle** — steps completed
+  - **Inner** — time elapsed toward due date (turns red when overdue)
+
+### Settings
+- **API Key** — securely stored in the macOS Keychain
+- **AI Model** — choose between Haiku, Sonnet, and Opus
+- **Updates** — check for and install updates directly in the app
+
+### In-App Updates
+- Checks your GitHub repo for a new `version.json` on every Settings open
+- Downloads and installs `GoalKeeper.zip` automatically
+- Replaces the existing app in-place — no duplicates
+
+---
+
+## 🚀 Xcode Setup
+
+### 1. Create a New Project
+- Xcode → **File → New → Project → macOS → App**
+- Language: **Swift**, Interface: **SwiftUI**
+- Name: `GoalKeeper`
+
+### 2. Add the Swift Files
+Drag all `.swift` files into your Xcode project. When prompted, make sure **"Copy items if needed"** is checked.
+
+| File | Role |
+|---|---|
+| `GoalPlannerApp.swift` | App entry point |
+| `Models.swift` | All data models |
+| `GoalStore.swift` | State + persistence |
+| `AnthropicService.swift` | Claude API calls |
+| `KeychainService.swift` | Secure API key + model preference storage |
+| `ProgressRingView.swift` | Activity ring components |
+| `ContentView.swift` | 3-column `NavigationSplitView` root |
+| `SidebarView.swift` | Left column — goals + grouped schedule |
+| `CalendarDashboardView.swift` | Middle column — calendar + rings |
+| `GoalDetailView.swift` | Right column — goal steps + AI summary |
+| `ScheduleDetailView.swift` | Right column — assignment detail + upcoming |
+| `StudyGuideView.swift` | Study guide sheet with tabs |
+| `AddGoalView.swift` | New goal sheet |
+| `ImportScheduleView.swift` | Schedule import sheet |
+| `SettingsView.swift` | API key, model picker, update checker |
+| `UpdateService.swift` | GitHub update checker + ZIP installer |
+
+> Delete the auto-generated `ContentView.swift` and `Item.swift` that Xcode creates.
+
+### 3. Set Your API Key (at runtime)
+Launch the app → **GoalKeeper → Settings (⌘,)** → paste your Anthropic API key.
+
+Get a free key at [console.anthropic.com](https://console.anthropic.com). New accounts receive $5 in free credits.
+
+### 4. Configure the Update URL
+In `UpdateService.swift`, replace the placeholder with your GitHub raw URL:
+```swift
+static let manifestURL = "https://raw.githubusercontent.com/YOUR_USERNAME/GoalKeeper/main/version.json"
+```
+
+### 5. App Sandbox
+Target → **Signing & Capabilities** → remove **App Sandbox** (required for the in-app update installer to replace the app binary).
+
+### 6. Set Minimum Deployment Target
+Target → **General** → Minimum Deployments → **macOS 14.0**
+
+### 7. Build & Run
+Select **My Mac** and press ▶.
+
+---
+
+## 🔑 API Key & Cost
+
+GoalKeeper uses the Anthropic Claude API. Each user enters their own key in Settings — keys are stored in the macOS Keychain, never hardcoded.
+
+**Approximate cost per request:**
+
+| Model | Cost per analysis |
+|---|---|
+| Haiku (recommended) | ~$0.01 |
+| Sonnet | ~$0.03–0.05 |
+| Opus | ~$0.05–0.10 |
+
+Study guides use more tokens (~4,000 max) so cost slightly more than goal analyses.
+
+---
+
+## 📦 Releasing Updates
+
+1. Bump **Version** in Xcode → General (e.g. `1.0.1`)
+2. Bump **Build** by 1
+3. **⇧⌘K** clean → **Product → Archive → Custom → Copy App → Sign to Run Locally → Export**
+4. In Terminal:
+```bash
+cd ~/Downloads/GoalKeeper
+zip -r GoalKeeper.zip GoalKeeper.app
+ls -lh GoalKeeper.zip  # confirm several MB
+```
+5. On GitHub, create a new Release with the version as the tag and upload `GoalKeeper.zip`
+6. Edit `version.json` in your repo:
+```json
+{
+  "version": "1.0.1",
+  "url": "https://github.com/YOUR_USERNAME/GoalKeeper/releases/download/1.0.1/GoalKeeper.zip",
+  "notes": "What changed in this version."
+}
+```
+
+Users will see the update next time they open Settings (⌘,).
+
+---
+
+## 📤 Sharing with Friends
+
+1. Export the app and zip it using the steps above
+2. Send `GoalKeeper.zip` — they unzip and move `GoalKeeper.app` to `/Applications`
+3. First launch only — open Terminal and run:
+```bash
+xattr -cr /Applications/GoalKeeper.app
+```
+4. Open GoalKeeper → Settings → paste their own Anthropic API key
+5. Future updates happen automatically inside the app
 
 ---
 
 ## 🏗 Architecture
 
 ```
-GoalPlannerApp
+GoalKeeperApp
 ├── GoalStore            ← ObservableObject, single source of truth
-├── AnthropicService     ← async/await API, NSImage → base64
+├── AnthropicService     ← async/await API, goal analysis, schedule parsing, study guides
+├── KeychainService      ← API key + model preference storage
+├── UpdateService        ← GitHub version check + ZIP installer
 └── ContentView (NavigationSplitView)
-    ├── SidebarView          ← goal list, grouped
-    ├── CalendarDashboardView ← month grid, summary rings
-    └── GoalDetailView       ← steps, tips, meta, re-analyze
-        AddGoalView (sheet)  ← form, NSOpenPanel, AI preview
+    ├── SidebarView               ← goals list + grouped schedule subjects
+    ├── CalendarDashboardView     ← month grid, summary rings, due items
+    └── Detail (routed by store.detailSelection)
+        ├── GoalDetailView        ← steps, tips, rings, re-analyze
+        └── ScheduleDetailView    ← assignment detail, upcoming, study guide
+            └── StudyGuideView    ← tabbed study guide sheet
+    AddGoalView (sheet)           ← form, rubric, image, AI preview
+    ImportScheduleView (sheet)    ← paste/photo, Claude extracts items
+    SettingsView (⌘,)             ← API key, model, update checker
 ```
 
 ---
 
 ## Requirements
-- macOS 14.0 (Sonoma) or later  
-- Xcode 15.0+  
-- Swift 5.9+  
-- Anthropic API key
+- macOS 14.0 (Sonoma) or later
+- Xcode 15.0+
+- Swift 5.9+
+- Anthropic API key ([console.anthropic.com](https://console.anthropic.com))
+- GitHub account (for update distribution)
