@@ -64,7 +64,7 @@ GoalKeeper is a macOS app that uses Claude AI to help you plan goals, track assi
 
   7. Paste your API key in the GoalKeeper settings menu by pressing (⌘ + ,) on your keyboard
 
-  8. While you're in the GoalKeeper settings menu, change the Claude model to your preference and check for updates
+  8. While you're in the GoalKeeper settings menu, change preferences to your liking and check for updates
 
   9. You're all set!
 
