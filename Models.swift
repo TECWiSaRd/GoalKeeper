@@ -1,5 +1,5 @@
 // Models.swift
-// Core data models — macOS version (uses NSImage/AppKit)
+// Core data models — macOS version
 
 import Foundation
 import SwiftUI
@@ -98,6 +98,55 @@ struct Goal: Identifiable, Codable {
     }
 }
 
+// MARK: - Schedule Item Type
+enum ScheduleItemType: String, Codable, CaseIterable {
+    case homework   = "Homework"
+    case test       = "Test"
+    case quiz       = "Quiz"
+    case project    = "Project"
+    case reading    = "Reading"
+    case other      = "Other"
+
+    var icon: String {
+        switch self {
+        case .homework:  return "pencil.and.list.clipboard"
+        case .test:      return "doc.text.magnifyingglass"
+        case .quiz:      return "questionmark.square.fill"
+        case .project:   return "folder.fill"
+        case .reading:   return "book.fill"
+        case .other:     return "calendar.badge.checkmark"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .homework:  return Color(hex: "4ECDC4")
+        case .test:      return Color(hex: "FF6B6B")
+        case .quiz:      return Color(hex: "FFB347")
+        case .project:   return Color(hex: "C3B1E1")
+        case .reading:   return Color(hex: "A8E6CF")
+        case .other:     return Color(hex: "8E8EA0")
+        }
+    }
+}
+
+// MARK: - Schedule Item
+struct ScheduleItem: Identifiable, Codable , Equatable {
+    var id = UUID()
+    var title: String
+    var subject: String          // class name — used for grouping
+    var type: ScheduleItemType
+    var dueDate: Date
+    var notes: String = ""
+    var isCompleted: Bool = false
+    var createdDate: Date = Date()
+
+    var daysUntilDue: Int {
+        Calendar.current.dateComponents([.day], from: Date(), to: dueDate).day ?? 0
+    }
+    var isOverdue: Bool { daysUntilDue < 0 && !isCompleted }
+}
+
 // MARK: - Color hex init
 extension Color {
     init(hex: String) {
@@ -113,4 +162,28 @@ extension Color {
         }
         self.init(.sRGB, red: Double(r)/255, green: Double(g)/255, blue: Double(b)/255, opacity: Double(a)/255)
     }
+}
+
+// MARK: - Study Guide Models
+struct StudyGuide: Identifiable, Codable {
+    var id = UUID()
+    var title: String
+    var overview: String
+    var sections: [StudyGuideSection]
+    var practiceQuestions: [PracticeQuestion]
+    var studyTips: [String]
+    var generatedDate: Date = Date()
+}
+
+struct StudyGuideSection: Identifiable, Codable {
+    var id = UUID()
+    var heading: String
+    var content: String
+    var keyPoints: [String]
+}
+
+struct PracticeQuestion: Identifiable, Codable {
+    var id = UUID()
+    var question: String
+    var answer: String
 }

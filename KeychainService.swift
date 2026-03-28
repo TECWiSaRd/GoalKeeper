@@ -6,7 +6,7 @@ import Foundation
 
 struct KeychainService {
     static let account = "anthropic_api_key"
-    static let service = "com.yourname.goalkeeper"
+    static let service = "com.tecwisard.goalkeeper"
 
     static func save(_ key: String) {
         let data = Data(key.utf8)
@@ -44,4 +44,9 @@ struct KeychainService {
     }
 
     static var hasKey: Bool { load() != nil }
+    
+    static var selectedModel: String {
+        get { UserDefaults.standard.string(forKey: "selectedModel") ?? "claude-haiku-4-5" }
+        set { UserDefaults.standard.set(newValue, forKey: "selectedModel") }
+    }
 }

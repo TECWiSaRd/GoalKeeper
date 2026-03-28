@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var keyInput  = ""
     @State private var isSaved   = false
     @State private var isVisible = false
+    @State private var selectedModel: String = KeychainService.selectedModel
 
     // Updates
     @ObservedObject private var updater = UpdateService.shared
@@ -17,6 +18,8 @@ struct SettingsView: View {
         ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 28) {
                 apiKeySection
+                Divider().background(Color.white.opacity(0.08))
+                modelSection
                 Divider().background(Color.white.opacity(0.08))
                 updatesSection
             }
@@ -122,6 +125,89 @@ struct SettingsView: View {
         }
     }
 
+    
+    
+    var modelSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionHeader("AI Model", icon: "cpu.fill")
+
+            Text("Choose the Claude model used to analyze your goals. Faster models are cheaper but slightly less detailed.")
+                .font(.system(size: 13))
+                .foregroundColor(Color(hex: "8E8EA0"))
+                .lineSpacing(4)
+
+            VStack(spacing: 6) {
+                modelOption(
+                    id: "claude-haiku-4-5",
+                    name: "Haiku",
+                    description: "Fastest · Cheapest · Great for most goals",
+                    badge: "Recommended",
+                    badgeColor: Color(hex: "4ECDC4")
+                )
+                modelOption(
+                    id: "claude-sonnet-4-6",
+                    name: "Sonnet",
+                    description: "Balanced speed and quality",
+                    badge: "~5× more",
+                    badgeColor: .orange
+                )
+                modelOption(
+                    id: "claude-opus-4-5",
+                    name: "Opus",
+                    description: "Most detailed · Best for complex goals",
+                    badge: "~25× more",
+                    badgeColor: .red
+                )
+            }
+        }
+    }
+
+    func modelOption(id: String, name: String, description: String, badge: String, badgeColor: Color) -> some View {
+        let isSelected = selectedModel == id
+        return Button {
+            selectedModel = id
+            KeychainService.selectedModel = id
+        } label: {
+            HStack(spacing: 12) {
+                // Radio circle
+                ZStack {
+                    Circle()
+                        .stroke(isSelected ? Color(hex: "4ECDC4") : Color.white.opacity(0.2), lineWidth: 2)
+                        .frame(width: 18, height: 18)
+                    if isSelected {
+                        Circle()
+                            .fill(Color(hex: "4ECDC4"))
+                            .frame(width: 10, height: 10)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text(description)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(hex: "8E8EA0"))
+                }
+
+                Spacer()
+
+                Text(badge)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(badgeColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(badgeColor.opacity(0.15))
+                    .cornerRadius(6)
+            }
+            .padding(10)
+            .background(isSelected ? Color(hex: "4ECDC4").opacity(0.07) : Color.white.opacity(0.04))
+            .cornerRadius(10)
+            .overlay(RoundedRectangle(cornerRadius: 10)
+                .stroke(isSelected ? Color(hex: "4ECDC4").opacity(0.3) : Color.white.opacity(0.06)))
+        }
+        .buttonStyle(.plain)
+    }
     // MARK: - Updates Section
     var updatesSection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -264,7 +350,7 @@ struct SettingsView: View {
 
         case .readyToInstall(let dmgURL):
             VStack(alignment: .leading, spacing: 8) {
-                Text("Ready to install. GoalKeeper will update and relaunch automatically — no duplicates.")
+                Text("Ready to install. GoalKeeper will quit and you'll need to reopen it manually.")
                     .font(.system(size: 12))
                     .foregroundColor(Color(hex: "8E8EA0"))
                     .lineSpacing(3)
@@ -275,7 +361,7 @@ struct SettingsView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "arrow.up.forward.app.fill")
-                            Text("Install & Relaunch")
+                            Text("Install")
                                 .font(.system(size: 13, weight: .semibold))
                         }
                         .foregroundColor(.black)

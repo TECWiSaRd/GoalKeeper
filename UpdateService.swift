@@ -94,6 +94,8 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
                    return
                }
                let manifest = try JSONDecoder().decode(VersionManifest.self, from: data)
+               print("🔢 Remote version string: '\(manifest.version)'")
+               print("🔢 Local version string: '\(currentVersion)'")
                guard let remote = AppVersion(manifest.version),
                      let local  = AppVersion(currentVersion) else {
                    await MainActor.run { state = .error("Could not parse version numbers") }
@@ -204,25 +206,12 @@ class UpdateService: NSObject, ObservableObject, URLSessionDownloadDelegate {
                 try? fm.removeItem(at: zipURL)
                 try? fm.removeItem(at: extractDir)
 
-                // 5. Relaunch updated app and quit old one
+                // 5. Quit app
                 
-                    let task = Process()
-                    task.launchPath = "/usr/bin/open"
-                    task.arguments  = ["/Applications/GoalKeeper.app"]
-                    try? task.run()
-                    
-                    // Wait a moment to ensure the open command fires before quitting
-                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-                    
-                    await MainActor.run {
-                        NSApp.terminate(nil)
-                    
-                }
-            } catch {
                 await MainActor.run {
-                    self.state = .error("Install failed: \(error.localizedDescription)")
+                    NSApp.terminate(nil)
                 }
-            }
+                }
         }
     }
 

@@ -131,7 +131,8 @@ struct CalendarDashboardView: View {
 
             // Day cells
             let days = calendarDays
-            let goalMap = store.goalsWithDueDates(in: currentMonth)
+            let goalMap     = store.goalsWithDueDates(in: currentMonth)
+            let scheduleMap = store.scheduleItemsWithDates(in: currentMonth)
             let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
 
             LazyVGrid(columns: columns, spacing: 2) {
@@ -139,7 +140,9 @@ struct CalendarDashboardView: View {
                     if let date = days[i] {
                         let isToday    = Calendar.current.isDateInToday(date)
                         let isSelected = Calendar.current.isDate(date, inSameDayAs: store.selectedDate)
-                        let dayGoals   = goalMap[Calendar.current.startOfDay(for: date)] ?? []
+                        let startOfDay = Calendar.current.startOfDay(for: date)
+                        let dayGoals   = goalMap[startOfDay] ?? []
+                        let dayItems   = scheduleMap[startOfDay] ?? []
 
                         Button {
                             store.selectedDate = date
@@ -156,8 +159,11 @@ struct CalendarDashboardView: View {
                                         .foregroundColor(isToday ? .black : .white)
                                 }
                                 HStack(spacing: 1) {
-                                    ForEach(dayGoals.prefix(3)) { g in
+                                    ForEach(dayGoals.prefix(2)) { g in
                                         Circle().fill(g.type.accentColor).frame(width: 3.5, height: 3.5)
+                                    }
+                                    ForEach(dayItems.prefix(2)) { s in
+                                        Circle().fill(s.type.color).frame(width: 3.5, height: 3.5)
                                     }
                                 }
                                 .frame(height: 5)
@@ -184,7 +190,7 @@ struct CalendarDashboardView: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundColor(Color(hex: "8E8EA0"))
 
-         
+            let allGoalsWithDates = store.goals.filter { $0.dueDate != nil || true }
             let sorted = store.goals.sorted {
                 ($0.dueDate ?? $0.createdDate) < ($1.dueDate ?? $1.createdDate)
             }
