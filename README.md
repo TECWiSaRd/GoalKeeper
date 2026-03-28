@@ -48,7 +48,7 @@ GoalKeeper is a macOS app that uses Claude AI to help you plan goals, track assi
 
 ---
 
-## How to Install (In 4 Steps!)
+## How to Install
 
   1. Download [GoalKeeper.zip](./GoalKeeper.zip)
 
