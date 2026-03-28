@@ -98,6 +98,7 @@ Drag all `.swift` files into your Xcode project. When prompted, make sure **"Cop
 | `ImportScheduleView.swift` | Schedule import sheet |
 | `SettingsView.swift` | API key, model picker, update checker |
 | `UpdateService.swift` | GitHub update checker + ZIP installer |
+| `Contents.json` | App logos |
 
 > Delete the auto-generated `ContentView.swift` and `Item.swift` that Xcode creates.
 
