@@ -100,7 +100,7 @@ Drag all `.swift` files into your Xcode project. When prompted, make sure **"Cop
 | `UpdateService.swift` | GitHub update checker + ZIP installer |
 | `Contents.json` | App logos |
 
-> Delete the auto-generated `ContentView.swift` and `Item.swift` that Xcode creates.
+> Delete the auto-generated `ContentView.swift`, `Content.json` (Make sure it's the right one, under AppIcon), and `Item.swift` that Xcode creates.
 
 ### 3. Set Your API Key (at runtime)
 Launch the app → **GoalKeeper → Settings (⌘,)** → paste your Anthropic API key.
