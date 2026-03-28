@@ -56,7 +56,7 @@ GoalKeeper is a macOS app that uses Claude AI to help you plan goals, track assi
 
   3. Move GoalKeeper.app to your Applications folder
 
-  4. Obtain a Claude API key at [platform.claude.com](platform.claude.com)
+  4. Obtain a Claude API key at [platform.claude.com](https://platform.claude.com)
 
   5. Open the app from your Applications folder
 
