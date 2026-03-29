@@ -140,44 +140,6 @@ Study guides use more tokens (~4,000 max) so cost slightly more than goal analys
 
 ---
 
-## 📦 Releasing Updates
-
-1. Bump **Version** in Xcode → General (e.g. `1.0.1`)
-2. Bump **Build** by 1
-3. **⇧⌘K** clean → **Product → Archive → Custom → Copy App → Sign to Run Locally → Export**
-4. In Terminal:
-```bash
-cd ~/Downloads/GoalKeeper
-zip -r GoalKeeper.zip GoalKeeper.app
-ls -lh GoalKeeper.zip  # confirm several MB
-```
-5. On GitHub, create a new Release with the version as the tag and upload `GoalKeeper.zip`
-6. Edit `version.json` in your repo:
-```json
-{
-  "version": "1.0.1",
-  "url": "https://github.com/YOUR_USERNAME/GoalKeeper/releases/download/1.0.1/GoalKeeper.zip",
-  "notes": "What changed in this version."
-}
-```
-
-Users will see the update next time they open Settings (⌘,).
-
----
-
-## 📤 Sharing with Friends
-
-1. Export the app and zip it using the steps above
-2. Send `GoalKeeper.zip` — they unzip and move `GoalKeeper.app` to `/Applications`
-3. First launch only — open Terminal and run:
-```bash
-xattr -cr /Applications/GoalKeeper.app
-```
-4. Open GoalKeeper → Settings → paste their own Anthropic API key
-5. Future updates happen automatically inside the app
-
----
-
 ## 🏗 Architecture
 
 ```
