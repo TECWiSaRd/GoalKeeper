@@ -29,6 +29,9 @@ GoalKeeper is a macOS app that uses Claude AI to help you plan goals, track assi
 - Apple Calendar-style month grid
 - Goal dots and schedule dots shown per day
 - Summary rings for overall progress across active goals
+- Upload your school calendar's .ics file
+- Create new calendar events
+- Dedicated calendar page displays countdowns to upcoming events
 
 ### Progress Rings
 - Three concentric rings per goal (like Apple Fitness):
