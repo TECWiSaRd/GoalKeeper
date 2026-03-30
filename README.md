@@ -133,10 +133,10 @@ GoalKeeper uses the Anthropic Claude API. Each user enters their own key in Sett
 | Model | Cost per analysis |
 |---|---|
 | Haiku (recommended) | ~$0.01 |
-| Sonnet | ~$0.03–0.05 |
-| Opus | ~$0.05–0.10 |
+| Sonnet | ~$0.01 | 
+| Opus | ~$0.02 |
 
-Study guides use more tokens (~4,000 max) so cost slightly more than goal analyses.
+Study guides use more tokens (~4,000 tokens max) so cost slightly more than goal analyses.
 
 ---
 
