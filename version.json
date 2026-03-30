@@ -1,5 +1,5 @@
 {
-  "version": "1.0.5",
-  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/1.0.5/GoalKeeper.zip",
-  "notes": "Added calendar page, ability to import calendars and events, release note page, and plus dropdown."
+  "version": "1.0.6",
+  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/1.0.6/GoalKeeper.zip",
+  "notes": "Bug fixes, added calendar event detail view, per-second countdowns, and expanded hit targets."
 }
