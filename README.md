@@ -60,9 +60,9 @@ GoalKeeper is a macOS app that uses Claude AI to help you plan goals, track assi
 
   5. Open the app from your Applications folder
 
-  6. Your Mac will display an error message "MacOS cannot verify that this app is free from malware". To resolve this, go to System Settings →   Privacy & Security → scroll all the way down → click "Open Anyway" or type "xattr -cr /Applications/GoalKeeper.app" in Terminal
+  6. Your Mac will display an error message "MacOS cannot verify that this app is free from malware". To resolve this, go to System Settings →   Privacy & Security → scroll all the way down → click "Open Anyway", hold control, then click "Open Anyway", or type "xattr -cr /Applications/GoalKeeper.app" in Terminal, then relaunch app.
 
-  7. Paste your API key in the GoalKeeper settings menu by pressing (⌘ + ,) on your keyboard
+  7. Paste your API key in the GoalKeeper settings menu by pressing (⌘ ,) on your keyboard
 
   8. While you're in the GoalKeeper settings menu, change preferences to your liking and check for updates
 
