@@ -1,5 +1,5 @@
 {
-  "version": "1.0.7",
-  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/1.0.7/GoalKeeper.zip",
-  "notes": "Migrated GoalKeeper to Flutter and Dart."
+  "version": "2.0.0",
+  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/2.0.0/GoalKeeper-Flutter.zip",
+  "notes": "Initial Flutter release."
 }
