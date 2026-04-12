@@ -1,5 +1,5 @@
 {
-  "version": "1.0.6",
-  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/1.0.6/GoalKeeper.zip",
-  "notes": "Bug fixes, added calendar event detail view, per-second countdowns, and expanded hit targets."
+  "version": "1.0.7",
+  "url": "https://github.com/TECWiSaRd/GoalKeeper/releases/download/1.0.7/GoalKeeper.zip",
+  "notes": "Migrated GoalKeeper to Flutter and Dart."
 }
